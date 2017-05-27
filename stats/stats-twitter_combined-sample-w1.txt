@@ -1,0 +1,2 @@
+Power Law Coefficient 2: 79.98647531318144
+In-Degree and Out-Degree have been plotted and saved at stats/twitter_combined-outdegree-distribution-sample-1.png

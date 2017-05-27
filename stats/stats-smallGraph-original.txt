@@ -1,0 +1,2 @@
+Statistics for input graph smallGraph
+In-Degree and Out-Degree have been plotted and saved at stats/smallGraph-outdegree-distribution.png

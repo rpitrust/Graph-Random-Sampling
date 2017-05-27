@@ -1,0 +1,2 @@
+Statistics for input graph twitter_combined
+In-Degree and Out-Degree have been plotted and saved at stats/twitter_combined-outdegree-distribution.png
