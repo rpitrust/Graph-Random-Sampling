@@ -6,6 +6,8 @@ import argparse
 import powerlaw
 from pathlib import Path
 from collections import Counter
+# import the fitting module
+import statFitting
 
 def calculateNMSE(outd1, outd2):
     #outd1 and outd2 should be of form
@@ -164,7 +166,12 @@ def graphSampleStatistics(origG, sampledG, selected, inFile, w, outdegree, maxou
     outGraph = 'stats/{}-outdegree-distribution-sample-{}.png'.format(inFile, w)
     plt.savefig(outGraph)
     plt.close()
-    #outKeys.remove(0)
+    
+    # ---- stat fitting for outdegree distribution ----
+    statFitting.polyFit(outKeys, outVals, inFile, w, 0);
+    statFitting.powerLawFit(outKeys, outVals, inFile, w, 0)
+    # ---- stat fitting for outdegree distribution ----    
+    
     fit = powerlaw.Fit(outKeys)
     print("Power Law Coefficient 2: {}".format(fit.alpha), file=outFile)
     plt.figure()
@@ -172,6 +179,12 @@ def graphSampleStatistics(origG, sampledG, selected, inFile, w, outdegree, maxou
     plt.yscale('log')
     plt.xscale('log')
     plt.plot(inKeys, inVals, 'bv-')
+    
+    # ---- stat fitting for outdegree distribution ----
+    statFitting.polyFit(inKeys, inVals, inFile, w, 1);
+    statFitting.powerLawFit(inKeys, inVals, inFile, w, 1)    
+    # ---- stat fitting for outdegree distribution ---- 
+    
     plt.xlabel('Degree')
     plt.ylabel('Percentage of nodes')
     title = 'Random Sample In-Degree Distributions for {}'.format(inFile)
@@ -181,9 +194,6 @@ def graphSampleStatistics(origG, sampledG, selected, inFile, w, outdegree, maxou
     plt.close()
 
     print('In-Degree and Out-Degree have been plotted and saved at {}'.format(outGraph), file=outFile)
-    #print('Clustering Coefficient:', file=outFile)
-    #cluster = nx.average_clustering(sampledG)
-    #print(cluster, file=outFile)
 
     NMSE, deg = calculateNMSE(outdegree, out_degree)
     return NMSE, deg
@@ -223,6 +233,12 @@ def graphStatistics(G, inFile):
     plt.figure()
     plt.xlim([1,(10**6)])
     plt.plot(out_degree_vals, norm_out_degree_distr, 'ro-')
+    
+    # ---- stat Fitting for original graph ---- #
+    statFitting.powerLawFit(out_degree_vals, norm_out_degree_distr, inFile, 1, 0, True)
+    statFitting.polyFit(out_degree_vals, norm_out_degree_distr, inFile, 1, 0, True)    
+    # ---- stat Fitting for original graph ---- #
+    
     plt.yscale('log')
     plt.xscale('log')
     plt.xlabel('Degree')
@@ -236,6 +252,12 @@ def graphStatistics(G, inFile):
     plt.figure()
     plt.xlim([1,(10**6)])
     plt.plot(in_degree_vals, norm_in_degree_distr, 'bv-')
+    
+    # ---- stat Fitting for original graph ---- #
+    statFitting.powerLawFit(in_degree_vals, norm_in_degree_distr, inFile, 1, 1, True)
+    statFitting.polyFit(in_degree_vals, norm_in_degree_distr, inFile, 1,1, True)
+    # ---- stat Fitting for original graph ---- #   
+    
     plt.yscale('log')
     plt.xscale('log')
     plt.xlabel('Degree')
@@ -247,9 +269,6 @@ def graphStatistics(G, inFile):
     plt.close()
 
     print('In-Degree and Out-Degree have been plotted and saved at {}'.format(outGraph), file=outFile)
-    #cluster = nx.average_clustering(G.to_undirected())
-    #print('Clustering Coefficient:', file=outFile)
-    #print(cluster, file=outFile)
 
     return c
 
