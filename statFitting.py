@@ -36,22 +36,10 @@ def drawSample(xdata, ydata):
     Test.append(yTestSet);
     return Sample, Test
 
-# Calculate the residual to evaluate the fit
-# Input: yfit -- y value calculated by fitting polynomial
-#        yvalue -- actual y coordinates
-# Output: sum of least square in all data points
-def calculateResidual(yfit, yvalue):
-    sum = 0
-    assert( yfit.size != 0)
-    for i in range(0, yfit.size):
-        r = (yfit[i] - yvalue[i]) **2
-        sum += r
-    return sum
-
 # Try fit with a polynomial, plot in log-log scale
 # Input: xdata -- x corrdinates; ydata -- y coordinates
 #        deg -- what degree should the fitting polynomial be, default is 4
-# Output: coefficients of the fitting polynomial
+# Output: coefficients and residual of the fitting polynomial
 def polyFit(xdata, ydata, deg = 4): 
     xnew = [];
     ynew = [];
@@ -75,8 +63,8 @@ def polyFit(xdata, ydata, deg = 4):
     fig = plt.figure();
     xdt = np.log(xnew);
     ydt = np.log(ynew);
-    coefs = np.polyfit(xdt, ydt, deg);     
-    return coefs
+    coefs, res, t1, t2, t3 = np.polyfit(xdt, ydt, deg, full = True);     
+    return coefs, res
 
 # To run fitting on a subset of data points
 # Input: coefs -- the coefficient of fitting poly; xTest: test x coordinates
@@ -106,8 +94,7 @@ def polyTest(coefs, xTest, yTest):
     ydt = np.log(ynew);    
     f = np.poly1d(coefs) # reconstruct the polynomial
     yval = np.exp(f(xdt))
-    r = calculateResidual(yval, ynew);
-    return r, xnew, ynew, yval
+    return xnew, ynew, yval
 
 # Function that used to graph the sample/test data statistics 
 # Input: xdata -- x coordinate; y data -- y coordinate, yfit -- y calculated by the fit
@@ -115,12 +102,13 @@ def polyTest(coefs, xTest, yTest):
 #        if data set is the sampled data set
 # Require: to have a directory named FittedGraph so the graphs will be stored under
 #          this directory
-def graphStat(xdata, ydata, yfit, res, title):
+def graphStat(xdata, ydata, yfit, res, title, test = False):
     path = './FittedGraph/' + title;
     fig = plt.figure()
     ax = fig.add_subplot(111)    
     plt.title(title);
-    plt.text(0.1, 0.9, 'least square residual %5.3f' % res, transform = ax.transAxes);
+    if (test == False):
+        plt.text(0.1, 0.9, 'least square residual %5.3f' % res, transform = ax.transAxes);
     plt.xlabel('Degree')    
     plt.ylabel('Percentage of nodes')     
     plt.loglog(xdata, ydata, 'o', label = 'data')
@@ -170,7 +158,7 @@ def findDegree(outKeys, outVals, orig = False):
             err = [];        
             for i in range(0, 10):    
                 S, T = drawSample(outKeys, outVals);
-                coefs = polyFit(S[0], S[1], 0, deg);
+                coefs = polyFit(S[0], S[1], deg);
                 error, x, y, yprime = polyTest(coefs, T[0], T[1]);
                 err.append(error)
             avg = sum(err)/len(err)

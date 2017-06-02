@@ -156,30 +156,30 @@ def graphSampleStatistics(origG, sampledG, selected, inFile, w, outdegree, maxou
     # Then use the test data points to test the fitting polynomial 
     # Finally plot the sample, test, and errors 
     S, T = statFitting.drawSample(outKeys, outVals);
-    coefs = statFitting.polyFit(S[0], S[1], bestDeg);
-    error, xdt, ydt, yfit = statFitting.polyTest(coefs, T[0], T[1]);
-    error2, xdt2, ydt2, yfit2 = statFitting.polyTest(coefs, S[0], S[1]);
+    coefs, error = statFitting.polyFit(S[0], S[1], bestDeg);
+    xdt, ydt, yfit = statFitting.polyTest(coefs, T[0], T[1]);
+    xdt2, ydt2, yfit2 = statFitting.polyTest(coefs, S[0], S[1]);
     title = 'Curve Fit For Test Data Out Degree'
-    statFitting.graphStat(xdt, ydt, yfit, error, title)
+    statFitting.graphStat(xdt, ydt, yfit, error, title, test = True)
     title = 'Absolute Error For Test Data Fitting Out Degree'    
     statFitting.graphError(xdt, ydt, yfit,title)
     title = 'Curve Fit For Sample Out Degree'    
-    statFitting.graphStat(xdt2, ydt2, yfit2, error2,title)
+    statFitting.graphStat(xdt2, ydt2, yfit2, error,title)
     title = 'Absolute Error For Sample Out Degree'    
     statFitting.graphError(xdt2, ydt2, yfit2,title)
     # ---- stat fitting for outdegree distribution ---- 
     
     # ---- stat fitting for indegree distribution ----
     S, T = statFitting.drawSample(inKeys, inVals);
-    coefs = statFitting.polyFit(S[0], S[1], bestDeg);
-    error, xdt, ydt, yfit = statFitting.polyTest(coefs, T[0], T[1]);
-    error2, xdt2, ydt2, yfit2 = statFitting.polyTest(coefs, S[0], S[1]);
+    coefs, error = statFitting.polyFit(S[0], S[1], bestDeg);
+    xdt, ydt, yfit = statFitting.polyTest(coefs, T[0], T[1]);
+    xdt2, ydt2, yfit2 = statFitting.polyTest(coefs, S[0], S[1]);
     title = 'Curve Fit For Test Data In Degree'    
-    statFitting.graphStat(xdt, ydt, yfit, error, title)
+    statFitting.graphStat(xdt, ydt, yfit, error, title, test = True)
     title = 'Absolute Error For Test Data Fitting In Degree'        
     statFitting.graphError(xdt, ydt, yfit, title);
     title = 'Curve Fit For Sample In Degree'    
-    statFitting.graphStat(xdt2, ydt2, yfit2, error2, title)
+    statFitting.graphStat(xdt2, ydt2, yfit2, error, title)
     title = 'Absolute Error For Sample In Degree'        
     statFitting.graphError(xdt2, ydt2, yfit2, title)    
     # ---- stat fitting for indegree distribution ---- 
@@ -210,15 +210,15 @@ def graphStatistics(G, inFile, findDeg = False):
     
     # ---- Finding the best degree to fit the original data ---- #
     if (findDeg == True): 
-        bestDeg = statFitting.findDegree(outKeys, outVals); 
+        bestDeg = statFitting.findDegree(out_degree_vals, norm_out_degree_distr, orig = True); 
         print('Best fitting degree suggested = ')
         print(bestDeg)
     else:
         bestDeg = 7;    
     
     # ---- stat Fitting for original graph out degree ---- #
-    coefs = statFitting.polyFit(out_degree_vals, norm_out_degree_distr, bestDeg);
-    error, xdt, ydt, yfit = statFitting.polyTest(coefs, out_degree_vals, norm_in_degree_distr);    
+    coefs, error = statFitting.polyFit(out_degree_vals, norm_out_degree_distr, bestDeg);
+    xdt, ydt, yfit = statFitting.polyTest(coefs, out_degree_vals, norm_in_degree_distr);    
     title = 'Curve Fit For Original Data Out Degree'        
     statFitting.graphStat(xdt, ydt, yfit, error, title)
     title = 'Absolute Error For Original Data Fitting Out Degree'        
@@ -226,8 +226,8 @@ def graphStatistics(G, inFile, findDeg = False):
     # ---- stat Fitting for original graph ---- #   
     
     # ---- stat Fitting for original graph in degree ---- #
-    coefs = statFitting.polyFit(in_degree_vals, norm_in_degree_distr, bestDeg);
-    error, xdt, ydt, yfit = statFitting.polyTest(coefs, out_degree_vals, norm_in_degree_distr);    
+    coefs, error = statFitting.polyFit(in_degree_vals, norm_in_degree_distr, bestDeg);
+    xdt, ydt, yfit = statFitting.polyTest(coefs, out_degree_vals, norm_in_degree_distr);    
     title = 'Curve Fit For Original Data In Degree'        
     statFitting.graphStat(xdt, ydt, yfit, error, title)
     title = 'Absolute Error For Original Data Fitting In Degree'        
