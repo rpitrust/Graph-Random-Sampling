@@ -47,6 +47,7 @@ def sample(G1, outFileG, outFileP, iternum, weight, count, inFile):
     jump = 0
     walk = 0
     sampled = 0
+   
     # iternum represents your sampling budget
     while(sampled < iternum - 10):
         # Get the set of out-edges and add them to our undirected graph
@@ -70,7 +71,7 @@ def sample(G1, outFileG, outFileP, iternum, weight, count, inFile):
             walk += 1
             sampled += 1
         selected.add(int(v))
-
+    
     # Exports the original graph (G1) and sampled graph (Gu) to a serialized
     # GPickle
     if(outFileG):

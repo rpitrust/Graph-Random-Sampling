@@ -2,10 +2,44 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy.polynomial.polynomial as poly
 from scipy import optimize
+import random
+from pathlib import Path
+import matplotlib.patches as patches
 
-# Given the y value calculated by the fit 
-# and the original value, to calculate the residual for evaluation 
-# of the fit
+# To select a portion of points from the sample to fit and to test
+# return value: two lists, one list contains all sample data points to derive 
+# the polynomial; the other list contains all the test data points used to 
+# test the polynomial fit
+# Input: xdata -- x coordinates for the plot
+#        ydata -- y coordinates for the plot
+# Output: Sample -- a list containing two sub lists, represents the sample x,y
+# data used to generate fitting polynomial; Test -- a list containing two sub lists
+# represents the data points used to test the fitting polynomial
+def drawSample(xdata, ydata):
+    xSampleSet = [];
+    ySampleSet = [];
+    xTestSet = [];
+    yTestSet = [];
+    for i in range(0, len(xdata)):
+        x = random.uniform(0, 1) # Random sampling from the sample
+        if (x <= 0.8):
+            xSampleSet.append(xdata[i])
+            ySampleSet.append(ydata[i])
+        else:
+            xTestSet.append(xdata[i])
+            yTestSet.append(ydata[i])
+    Sample = [];
+    Test = [];
+    Sample.append(xSampleSet);
+    Sample.append(ySampleSet);
+    Test.append(xTestSet);
+    Test.append(yTestSet);
+    return Sample, Test
+
+# Calculate the residual to evaluate the fit
+# Input: yfit -- y value calculated by fitting polynomial
+#        yvalue -- actual y coordinates
+# Output: sum of least square in all data points
 def calculateResidual(yfit, yvalue):
     sum = 0
     assert( yfit.size != 0)
@@ -14,8 +48,11 @@ def calculateResidual(yfit, yvalue):
         sum += r
     return sum
 
-# Try fit with a polynomial, but plot in log-log scale
-def polyFit(xdata, ydata, inFile, w, flag, orig = False): 
+# Try fit with a polynomial, plot in log-log scale
+# Input: xdata -- x corrdinates; ydata -- y coordinates
+#        deg -- what degree should the fitting polynomial be, default is 4
+# Output: coefficients of the fitting polynomial
+def polyFit(xdata, ydata, deg = 4): 
     xnew = [];
     ynew = [];
     # Ensure only valid values to take logarithm
@@ -33,70 +70,27 @@ def polyFit(xdata, ydata, inFile, w, flag, orig = False):
     elif sizeX < sizeY:
         ynew = ynew[:sizeX];
     xnew = np.array(xnew);
-    ynew = np.array(ynew); 
-    print('final size: ');
-    print(xnew.size);    
+    ynew = np.array(ynew);  
    
     fig = plt.figure();
     xdt = np.log(xnew);
     ydt = np.log(ynew);
-    if (flag == 0):
-        plt.scatter(xnew, ynew,marker = 'o', color = 'b', alpha = 0.7, s = 30);
-    else:
-        plt.scatter(xnew, ynew,marker = 'x', color = 'r', alpha = 0.7, s = 30);
-        
-    coefs = np.polyfit(xdt, ydt, 6); # approximate with 6 degree polynomial
-    ffit = np.poly1d(coefs);
-    yfit = np.exp(ffit(xdt)); # get back in linear scale
-    # calculate residual
-    res = calculateResidual(yfit, ynew)
-    # plot & formatting
-    plt.plot(xnew, yfit, 'g-', label = 'fit');
-    plt.xlabel('Degree')
-    plt.ylabel('Percentage of nodes')  
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.text(6, 0.5, 'least square residual = %5.3f' % res)
-    if (orig == False): 
-        if (flag == 0):     
-            title = 'Curve Fit For Random Sample Out-Degree Distributions'   
-        else:
-            title = 'Curve Fit For Random Sample In-Degree Distributions'
-        if (flag == 0):
-            outGraph = 'FittedGraph/{}-outdegree-distribution-sample-{}.png'.format(inFile, w)
-        else:
-            outGraph = 'FittedGraph/{}-indegree-distribution-sample-{}.png'.format(inFile, w)   
-    else:
-        if (flag == 0):     
-            title = 'Curve Fit For WikiTalk Out-Degree Distributions'   
-        else:
-            title = 'Curve Fit For WikiTalk In-Dgree Distributions'
-        if (flag == 0):
-            outGraph = 'FittedGraph/{}-outdegree-distribution-{}.png'.format(inFile, w)
-        else:
-            outGraph = 'FittedGraph/{}-indegree-distribution-{}.png'.format(inFile, w)          
-    plt.title(title);    
-    plt.legend();    
-    plt.savefig(outGraph)
-    plt.close()    
+    coefs = np.polyfit(xdt, ydt, deg);     
+    return coefs
 
-
-# fitting using power law
-# Define function for calculating a power law
-powerlaw = lambda x, amp, index: amp * (x**index)
-# define our (line) fitting function
-fitfunc = lambda p, x: p[0] + p[1] * x
-errfunc = lambda p, x, y: (y - fitfunc(p, x))
-pinit = [1, -1, 0.]
-
-def powerLawFit(xdata, ydata, inFile, w, flag, orig = False):
+# To run fitting on a subset of data points
+# Input: coefs -- the coefficient of fitting poly; xTest: test x coordinates
+#        yTest: test y coordinates
+# Output: r -- residual, xnew -- x coordinates after fix, ynew -- y coordinates
+#         after fix, yval -- y coordinates calculated by the fitting poly
+def polyTest(coefs, xTest, yTest):
     xnew = [];
     ynew = [];
     # Ensure only valid values to take logarithm
-    for i in xdata:
+    for i in xTest:
         if i != 0.0:
             xnew.append(i);
-    for j in ydata:
+    for j in yTest:
         if j != 0.0:
             ynew.append(j);
     # Make some size adjustments
@@ -107,57 +101,95 @@ def powerLawFit(xdata, ydata, inFile, w, flag, orig = False):
     elif sizeX < sizeY:
         ynew = ynew[:sizeX];
     xnew = np.array(xnew);
-    ynew = np.array(ynew); 
-    logx = np.log(xnew)
-    logy = np.log(ynew)
-    print('final size: ');
-    print(xnew.size);
-    out = optimize.leastsq(errfunc, pinit, args = (logx, logy), full_output = 1)
-    pfinal = out[0]
-    covar = out[1]
-    print('pfinal = ')
-    print(pfinal)
-    print('covar = ')
-    print(covar)
-    index = pfinal[1]
-    amp = np.exp(pfinal[0])
-    
-    # plotting the data
-    fig = plt.figure();    
-    yval = powerlaw(xnew, amp, index);
-    plt.loglog(xnew, yval,label = 'fit') # fit
-    # data
-    if flag == 0:
-        plt.loglog(xnew, ynew, 'o', color = 'g',label = 'data')
-    else:
-        plt.loglog(xnew, ynew, 'x', color = 'r', label = 'data')        
-    plt.xlabel('Degree')    
-    plt.ylabel('Percentage of nodes')  
-    plt.text(6, 0.5, 'fit(in linear scale) = %5.2fx^%5.2f' % (amp, index))
-    # calculate residual
-    res = calculateResidual(yval, ynew)
-    # print out text
-    plt.text(6, 0.2, 'least square residual = %5.3f' % res)
-    
-    if (orig == False): 
-        if (flag == 0):     
-            title = 'Curve Fit For Random Sample Out-Degree Distributions'   
-        else:
-            title = 'Curve Fit For Random Sample In-Degree Distributions'
-        if (flag == 0):
-            outGraph = 'FittedGraph/{}-outdegree-distribution-sample-{}-pLaw.png'.format(inFile, w)
-        else:
-            outGraph = 'FittedGraph/{}-indegree-distribution-sample-{}-pLaw.png'.format(inFile, w)   
-    else:
-        if (flag == 0):     
-            title = 'Curve Fit For WikiTalk Out-Degree Distributions'   
-        else:
-            title = 'Curve Fit For WikiTalk In-Dgree Distributions'
-        if (flag == 0):
-            outGraph = 'FittedGraph/{}-outdegree-distribution-{}-pLaw.png'.format(inFile, w)
-        else:
-            outGraph = 'FittedGraph/{}-indegree-distribution-{}-pLaw.png'.format(inFile, w)      
+    ynew = np.array(ynew);     
+    xdt = np.log(xnew);
+    ydt = np.log(ynew);    
+    f = np.poly1d(coefs) # reconstruct the polynomial
+    yval = np.exp(f(xdt))
+    r = calculateResidual(yval, ynew);
+    return r, xnew, ynew, yval
+
+# Function that used to graph the sample/test data statistics 
+# Input: xdata -- x coordinate; y data -- y coordinate, yfit -- y calculated by the fit
+#        res -- the residual, test = True if data set is the test data set; False
+#        if data set is the sampled data set
+# Require: to have a directory named FittedGraph so the graphs will be stored under
+#          this directory
+def graphStat(xdata, ydata, yfit, res, title):
+    path = './FittedGraph/' + title;
+    fig = plt.figure()
+    ax = fig.add_subplot(111)    
     plt.title(title);
-    plt.legend();    
-    plt.savefig(outGraph)
-    plt.close()       
+    plt.text(0.1, 0.9, 'least square residual %5.3f' % res, transform = ax.transAxes);
+    plt.xlabel('Degree')    
+    plt.ylabel('Percentage of nodes')     
+    plt.loglog(xdata, ydata, 'o', label = 'data')
+    plt.loglog(xdata, yfit, 'k-', label = 'fit');
+    plt.legend();
+    plt.savefig(path)
+    plt.close()
+
+# Graph the absolute error of the fitting polynomial
+# Input output similar to the above function
+def graphError(xdata, ydata, yfit, title):
+    path = './FittedGraph/' + title;    
+    plt.figure();
+    plt.xlabel('Degree')
+    plt.ylabel('Error')
+    err = abs(yfit - ydata)
+    plt.loglog(xdata, err, 'b--', label = 'Absolute Error')
+    plt.legend();   
+    plt.title(title)
+    plt.savefig(path)
+    plt.close()
+
+# Find the best degree for the fitting polynomial -- note that only out degree
+# is used since in-degree distribution resembles that. Run 100 times; for each
+# degree, sample and fit for 10 times. Degree fitting from 1 to 9
+# Input: outKeys -- x coordinate data, outVals -- y coordinate data orig: True
+#        if it's the original graph, False if it's a sample
+# Output: a txt file that contains the frequency distribution of best degree
+#         at each run; will also return the best degree found to caller
+
+def findDegree(outKeys, outVals, orig = False):
+    frequencyDict = {}
+    for i in range(1, 10):
+        frequencyDict[i] = 0;
+    if (orig == False):
+        fileName = "./result.txt"
+    else:
+        fileName = "./result-orig.txt"
+    if (Path(fileName).is_file()):
+        out = open(fileName, 'w');
+    else:
+        out = open(fileName, 'x');
+    for j in range(0, 100): # trial of 100 times
+        minDeg = 0;
+        minAvg = 100;
+        for deg in range(1, 10):    
+            err = [];        
+            for i in range(0, 10):    
+                S, T = drawSample(outKeys, outVals);
+                coefs = polyFit(S[0], S[1], 0, deg);
+                error, x, y, yprime = polyTest(coefs, T[0], T[1]);
+                err.append(error)
+            avg = sum(err)/len(err)
+            if (avg < minAvg):
+                minAvg = avg
+                minDeg = deg
+        print('SUMMARY: ', file = out)
+        print('Run ', file = out)
+        print(j, file = out)
+        print('Minumum average error = ', file = out)
+        print(minAvg, file = out)
+        print('Minumum degree for fitting polynomial = ', file = out)
+        print(minDeg,file = out)
+        frequencyDict[minDeg] += 1 # update frequency count        
+    print('Frequency Count', file = out)
+    print(frequencyDict, file = out)    
+    lst = list(frequencyDict.values())
+    lst.sort() # sort by ascending order
+    for k, v in frequencyDict.items():
+        if v == lst[-1]:
+            return k;
+

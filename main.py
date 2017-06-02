@@ -37,6 +37,8 @@ def main():
                         help='Amount of iterations for different samplings based on increment amount')
     parser.add_argument('-ws', '--wset', nargs='+', type=float, default=[False],
                         help='Array of w values to test')
+    parser.add_argument('-deg', '--bestdeg', type = bool, default = False,
+                        help = 'Whether to use the default fitting degree, or find the degree yourself, default = False, using default degree')
     args = parser.parse_args()
 
     # loop indir
@@ -56,9 +58,7 @@ def main():
                     end = len(args.wset)
                 inFile = os.path.dirname(os.path.abspath(
                         __file__)) + "/testGraphs/" + file
-                # ---- Edited by me to test if it prints the directory correctly ---- #
-                print (inFile);
-                # ---- Edited by me to test if it prints the directory correctly ---- #            
+                        
                 # Creates a Directed Graph to load the data into
                 G1 = nx.DiGraph()
                 print("Beginning Processing of input file")
@@ -85,7 +85,10 @@ def main():
                 outdegree = G1.out_degree()
                 max1 = max(outdegree, key=lambda k: outdegree[k])
                 sys.stdout.flush()
-                outdegreedistr = graphStatistics(G1, file.split('.')[0])
+                if (args.bestdeg == True): 
+                    outdegreedistr = graphStatistics(G1, file.split('.')[0], findDeg = True)
+                else:
+                    outdegreedistr = graphStatistics(G1, file.split('.')[0])                    
                 nmse = []
                 degrees = []
                 for i in range(0, end):
@@ -103,12 +106,16 @@ def main():
                     print(len(G1.nodes()))
                     graphs = sample(G1, args.outFileG, args.outFileP,
                                     args.iternum, weight, count, inFile)
-                    print('size of the new graph = ')
-                    print(len(graphs[0]))
+                   
                     print('I made it after the sampling')
                     sys.stdout.flush()
-                    n,d = graphSampleStatistics(G1, graphs[0], graphs[
-                                          1], file.split('.')[0], weight, outdegreedistr, max1)
+                    if (args.bestdeg == True):
+                        
+                        n,d = graphSampleStatistics(G1, graphs[0], graphs[
+                                              1], file.split('.')[0], weight, outdegreedistr, max1,findDeg = True)
+                    else:
+                        n,d = graphSampleStatistics(G1, graphs[0], graphs[
+                            1], file.split('.')[0], weight, outdegreedistr,max1)
                     nmse.append(n)
                     degrees.append(d)
                     print('Graphed sample statistics')

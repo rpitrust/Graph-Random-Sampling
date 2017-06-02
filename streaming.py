@@ -34,7 +34,7 @@ def generateOutDegreeGraph(G, inFile, add, sample):
     plt.ylabel('Percentage of nodes')
     title = 'Streaming Random Sample Out-Degree Distribution for {}'.format(inFile)
     plt.title(title)
-    outGraph = 'stats/{}-{}-degree-distribution-new.jpg'.format(inFile, add)
+    outGraph = 'stats/{}-{}-degree-distribution-new.png'.format(inFile, add)
     plt.savefig(outGraph)
     plt.close()
 
@@ -143,6 +143,7 @@ def main():
                         help='Cost for random jump')
 
     args = parser.parse_args()
+    
     if not args.testgraphf and args.stream:
         print("Please supply test graph to substitue streaming capabilities")
         sys.exit()
@@ -170,7 +171,7 @@ def main():
             print("Can't sample more nodes than the graph provided has.")
             sys.exit()
     else:
-        print("Need test graph without streaming capabilities enabled")
+        print("Need test graph without streaming capabilities enabled") # need implement
         sys.exit()
 
     #Initial sample graph
@@ -187,6 +188,8 @@ def main():
     toNav = deque()
     #Continuous sampling function
     finished = False
+    
+    
     while(not finished):
         if args.stream:
             data = collect(IS)
