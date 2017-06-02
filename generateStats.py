@@ -131,20 +131,10 @@ def distributionEstimatorIn(indegreeDict, dd2, selected, w):
 
 # Computes out_degree distribution, in_degree distribution
 # and clustering coefficient of sampled graph after DURW
-def graphSampleStatistics(origG, sampledG, selected, inFile, w, outdegree, maxout):
-    outName = 'stats/stats-{}-sample-w{}.txt'.format(inFile, str(w))
-    # ---- Edited by me ----
-    if (Path(outName).is_file()):
-        outFile = open(outName, 'w')
-    else:
-        outFile = open(outName, 'x')
-    # ---- Edited by me ----
-        
-    print('Statistics for input graph sample-{}-w{}'.format(inFile, str(w)), outFile)
-    
+def graphSampleStatistics(origG, sampledG, selected, inFile, w, outdegree, maxout, findDeg = False):
     od = origG.out_degree()
     id = origG.in_degree()
-    dd2 = sampledG.degree() # why in this line it's dd2 not od??
+    dd2 = sampledG.degree() 
     out_degree = distributionEstimatorOut(
         od, dd2, selected, w, maxout)
     
@@ -154,63 +144,54 @@ def graphSampleStatistics(origG, sampledG, selected, inFile, w, outdegree, maxou
     outVals = list(out_degree.values())
     inKeys = [float(x) for x in in_degree.keys()]
     inVals = list(in_degree.values())
-    plt.figure()
-    plt.xlim([1,(10**6)])
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.plot(outKeys, outVals, 'ro-')
-    plt.xlabel('Degree')
-    plt.ylabel('Percentage of nodes')
-    title = 'Random Sample Out-Degree Distributions for {}'.format(inFile)
-    plt.title(title)
-    outGraph = 'stats/{}-outdegree-distribution-sample-{}.png'.format(inFile, w)
-    plt.savefig(outGraph)
-    plt.close()
-    
+    # ---- finding the best degree
+    if (findDeg == True): 
+        bestDeg = statFitting.findDegree(outKeys, outVals); 
+        print('Best fitting degree suggested = ')
+        print(bestDeg)
+    else:
+        bestDeg = 4;
     # ---- stat fitting for outdegree distribution ----
-    statFitting.polyFit(outKeys, outVals, inFile, w, 0);
-    statFitting.powerLawFit(outKeys, outVals, inFile, w, 0)
-    # ---- stat fitting for outdegree distribution ----    
-    
-    fit = powerlaw.Fit(outKeys)
-    print("Power Law Coefficient 2: {}".format(fit.alpha), file=outFile)
-    plt.figure()
-    plt.xlim([1,(10**6)])
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.plot(inKeys, inVals, 'bv-')
-    
-    # ---- stat fitting for outdegree distribution ----
-    statFitting.polyFit(inKeys, inVals, inFile, w, 1);
-    statFitting.powerLawFit(inKeys, inVals, inFile, w, 1)    
+    # First draw the sample to derive the fitting polynomial 
+    # Then use the test data points to test the fitting polynomial 
+    # Finally plot the sample, test, and errors 
+    S, T = statFitting.drawSample(outKeys, outVals);
+    coefs = statFitting.polyFit(S[0], S[1], bestDeg);
+    error, xdt, ydt, yfit = statFitting.polyTest(coefs, T[0], T[1]);
+    error2, xdt2, ydt2, yfit2 = statFitting.polyTest(coefs, S[0], S[1]);
+    title = 'Curve Fit For Test Data Out Degree'
+    statFitting.graphStat(xdt, ydt, yfit, error, title)
+    title = 'Absolute Error For Test Data Fitting Out Degree'    
+    statFitting.graphError(xdt, ydt, yfit,title)
+    title = 'Curve Fit For Sample Out Degree'    
+    statFitting.graphStat(xdt2, ydt2, yfit2, error2,title)
+    title = 'Absolute Error For Sample Out Degree'    
+    statFitting.graphError(xdt2, ydt2, yfit2,title)
     # ---- stat fitting for outdegree distribution ---- 
     
-    plt.xlabel('Degree')
-    plt.ylabel('Percentage of nodes')
-    title = 'Random Sample In-Degree Distributions for {}'.format(inFile)
-    plt.title(title)
-    outGraph2 = 'stats/{}-indegree-distribution-sample-{}.png'.format(inFile, w)
-    plt.savefig(outGraph2)
-    plt.close()
-
-    print('In-Degree and Out-Degree have been plotted and saved at {}'.format(outGraph), file=outFile)
-
+    # ---- stat fitting for indegree distribution ----
+    S, T = statFitting.drawSample(inKeys, inVals);
+    coefs = statFitting.polyFit(S[0], S[1], bestDeg);
+    error, xdt, ydt, yfit = statFitting.polyTest(coefs, T[0], T[1]);
+    error2, xdt2, ydt2, yfit2 = statFitting.polyTest(coefs, S[0], S[1]);
+    title = 'Curve Fit For Test Data In Degree'    
+    statFitting.graphStat(xdt, ydt, yfit, error, title)
+    title = 'Absolute Error For Test Data Fitting In Degree'        
+    statFitting.graphError(xdt, ydt, yfit, title);
+    title = 'Curve Fit For Sample In Degree'    
+    statFitting.graphStat(xdt2, ydt2, yfit2, error2, title)
+    title = 'Absolute Error For Sample In Degree'        
+    statFitting.graphError(xdt2, ydt2, yfit2, title)    
+    # ---- stat fitting for indegree distribution ---- 
+    
+    # ---- Calculating NMSE ---- #
     NMSE, deg = calculateNMSE(outdegree, out_degree)
     return NMSE, deg
 
+
 # Computes out_degree distribution, in_degree distribution
 # and clustering coefficient of unsampled graph
-
-
-def graphStatistics(G, inFile):
-    outName = 'stats/stats-{}-original.txt'.format(inFile)
-    #Edited by me -- first see a file exists, if so trucate and write to it
-    # if not -- create the file
-    if (Path(outName).is_file()):
-        outFile = open(outName, 'w') 
-    else:
-        outFile = open(outName,'x')    
-    print('Statistics for input graph {}'.format(inFile), file=outFile)
+def graphStatistics(G, inFile, findDeg = False):
 
     out_degree = G.out_degree()
     out_degree_vals = sorted(set(out_degree.values()))
@@ -226,50 +207,32 @@ def graphStatistics(G, inFile):
     n2 = float(sum(in_degree_distr))
     n2A = np.ones(len(in_degree_distr)) * n2
     norm_in_degree_distr = in_degree_distr / n2A
-
-    #fit = powerlaw.Fit(out_degree_vals)
-    #print("Power Law Coefficient 1: {}".format(fit.alpha), file=outFile)
-
-    plt.figure()
-    plt.xlim([1,(10**6)])
-    plt.plot(out_degree_vals, norm_out_degree_distr, 'ro-')
     
-    # ---- stat Fitting for original graph ---- #
-    statFitting.powerLawFit(out_degree_vals, norm_out_degree_distr, inFile, 1, 0, True)
-    statFitting.polyFit(out_degree_vals, norm_out_degree_distr, inFile, 1, 0, True)    
-    # ---- stat Fitting for original graph ---- #
+    # ---- Finding the best degree to fit the original data ---- #
+    if (findDeg == True): 
+        bestDeg = statFitting.findDegree(outKeys, outVals); 
+        print('Best fitting degree suggested = ')
+        print(bestDeg)
+    else:
+        bestDeg = 7;    
     
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.xlabel('Degree')
-    plt.ylabel('Percentage of nodes')
-    title = 'Out-Degree Distributions for {}'.format(inFile)
-    plt.title(title)
-    outGraph = 'stats/{}-outdegree-distribution.png'.format(inFile) #Edited by me: jpg is not supported format
-    plt.savefig(outGraph)
-    plt.close()
-
-    plt.figure()
-    plt.xlim([1,(10**6)])
-    plt.plot(in_degree_vals, norm_in_degree_distr, 'bv-')
-    
-    # ---- stat Fitting for original graph ---- #
-    statFitting.powerLawFit(in_degree_vals, norm_in_degree_distr, inFile, 1, 1, True)
-    statFitting.polyFit(in_degree_vals, norm_in_degree_distr, inFile, 1,1, True)
+    # ---- stat Fitting for original graph out degree ---- #
+    coefs = statFitting.polyFit(out_degree_vals, norm_out_degree_distr, bestDeg);
+    error, xdt, ydt, yfit = statFitting.polyTest(coefs, out_degree_vals, norm_in_degree_distr);    
+    title = 'Curve Fit For Original Data Out Degree'        
+    statFitting.graphStat(xdt, ydt, yfit, error, title)
+    title = 'Absolute Error For Original Data Fitting Out Degree'        
+    statFitting.graphError(xdt, ydt, yfit, title);
     # ---- stat Fitting for original graph ---- #   
     
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.xlabel('Degree')
-    plt.ylabel('Percentage of nodes')
-    title = 'In-Degree Distributions for {}'.format(inFile)
-    plt.title(title)
-    outGraph2 = 'stats/{}-indegree-distribution.png'.format(inFile) #Edited by me: jpg is not supported format
-    plt.savefig(outGraph2)
-    plt.close()
-
-    print('In-Degree and Out-Degree have been plotted and saved at {}'.format(outGraph), file=outFile)
-
+    # ---- stat Fitting for original graph in degree ---- #
+    coefs = statFitting.polyFit(in_degree_vals, norm_in_degree_distr, bestDeg);
+    error, xdt, ydt, yfit = statFitting.polyTest(coefs, out_degree_vals, norm_in_degree_distr);    
+    title = 'Curve Fit For Original Data In Degree'        
+    statFitting.graphStat(xdt, ydt, yfit, error, title)
+    title = 'Absolute Error For Original Data Fitting In Degree'        
+    statFitting.graphError(xdt, ydt, yfit, title);    
+  
     return c
 
 
