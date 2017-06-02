@@ -158,8 +158,8 @@ def findDegree(outKeys, outVals, orig = False):
             err = [];        
             for i in range(0, 10):    
                 S, T = drawSample(outKeys, outVals);
-                coefs = polyFit(S[0], S[1], deg);
-                error, x, y, yprime = polyTest(coefs, T[0], T[1]);
+                coefs, error = polyFit(S[0], S[1], deg);
+                x, y, yprime = polyTest(coefs, T[0], T[1]);
                 err.append(error)
             avg = sum(err)/len(err)
             if (avg < minAvg):
