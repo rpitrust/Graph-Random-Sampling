@@ -152,8 +152,8 @@ def findDegree(outKeys, outVals, orig = False):
     else:
         out = open(fileName, 'x');
     for j in range(0, 100): # trial of 100 times
-        minDeg = 0;
-        minAvg = 100;
+        minDeg = 1;
+        minAvg = 10000;
         for deg in range(1, 10):    
             err = [];        
             for i in range(0, 10):    

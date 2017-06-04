@@ -6,6 +6,7 @@ from categorical import Categorical as C
 from datetime import datetime
 from collections import deque, Counter
 import matplotlib.pyplot as plt
+import statFitting
 
 startTime = datetime.now()
 
@@ -25,19 +26,18 @@ def generateOutDegreeGraph(G, inFile, add, sample):
     n1 = float(sum(out_degree_distr))
     n1A = np.ones(len(out_degree_distr)) * n1
     norm_out_degree_distr = out_degree_distr / n1A
-    plt.figure()
-    plt.plot(out_degree_vals, norm_out_degree_distr, 'ro-')
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.xlim([1,(10**6)])
-    plt.xlabel('Degree')
-    plt.ylabel('Percentage of nodes')
-    title = 'Streaming Random Sample Out-Degree Distribution for {}'.format(inFile)
-    plt.title(title)
-    outGraph = 'stats/{}-{}-degree-distribution-new.png'.format(inFile, add)
-    plt.savefig(outGraph)
-    plt.close()
-
+    # ---- Using statFitting module to do curve fitting ---- #
+    bestDeg = statFitting.findDegree(out_degree_vals, norm_out_degree_distr); 
+    print('Best fitting degree suggested = ')
+    print(bestDeg)    
+    coefs, error = statFitting.polyFit(out_degree_vals, norm_out_degree_distr, bestDeg);
+    xdt, ydt, yfit = statFitting.polyTest(coefs, out_degree_vals, norm_out_degree_distr);    
+    title = '{}-{}-degree-distribution-new.png'.format(inFile, add)    
+    statFitting.graphStat(xdt, ydt, yfit, error, title)
+    title = 'Absolute Error {}-{}-degree-distribution.png'.format(inFile, add)       
+    statFitting.graphError(xdt, ydt, yfit, title);    
+    # ---- Using statFitting module to do curve fitting ---- #    
+    
 
 def labelNode(G, v):
     if 'collected' not in G.node[v]:
@@ -183,7 +183,7 @@ def main():
         G.add_node(node, collected=False, seed=True, sampled=False)
 
     #Set of K random nodes specified by user
-    IS = np.random.choice(seed, args.kval)
+    IS = np.random.choice(seed, args.kval) # np.random.choice: choose kval nodes from seeds
 
     toNav = deque()
     #Continuous sampling function

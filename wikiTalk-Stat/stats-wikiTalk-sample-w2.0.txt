@@ -1,2 +1,0 @@
-Power Law Coefficient 2: 46.59852603259648
-In-Degree and Out-Degree have been plotted and saved at stats/wikiTalk-outdegree-distribution-sample-2.0.png
